@@ -9,7 +9,7 @@ FLAGS = tf.app.flags.FLAGS
 # mode
 tf.app.flags.DEFINE_boolean('is_training', True, 'training or testing')
 # data
-tf.app.flags.DEFINE_string('root_dir', './datasets/homework', 'data root dir')
+tf.app.flags.DEFINE_string('root_dir', '/data/DL_HW2', 'data root dir')
 tf.app.flags.DEFINE_string('dataset', 'dset1', 'dset1 or dset2')
 tf.app.flags.DEFINE_integer('n_label', 65, 'number of classes')
 # trainig
@@ -36,7 +36,7 @@ class DataSet(object):
         self.n_label = n_label
         self.data_aug = data_aug
         self.shuffle = shuffle
-        self.xs, self.ys = self.load_data(root_dir, dataset, sub_set, n_label)
+        self.xs, self.ys = self.load_data()
         self._num_examples = len(self.xs)
         self.init_epoch()
 
@@ -78,7 +78,7 @@ class DataSet(object):
         print(self.cur_index)
         x_batch = []
         y_batch = []
-        for i in xrange(self.batch_size):
+        for i in range(self.batch_size):
             x_batch.append(self.xs[self.indices[self.cur_index+i]])
             y_batch.append(self.ys[self.indices[self.cur_index+i]])
         self.cur_index += self.batch_size
@@ -105,9 +105,9 @@ class Model(object):
     def __init__(self):
         '''TODO: construct your model here.'''
         # Placeholders for input ims and labels
-        images = tf.placeholder(tf.float32, [None, 224, 224, 3])
-        labels = tf.placeholder(tf.float32, [None, num_classes])
-        
+        ims = tf.placeholder(tf.float32, [None, 224, 224, 3])
+        labels = tf.placeholder(tf.float32, [None, FLAGS.n_label])
+
         # Construct model
         self.logits = construct_model()
         self.prediction = tf.nn.softmax(self.logits)
@@ -130,6 +130,27 @@ class Model(object):
 
     def contruct_model(self):
         '''TODO: Your code here.'''
+        with tf.variable_scope('conv1') as scope:
+            conv1_kernel = tf.get_variable(name='conv1_kernel', 
+                                           shape=[5, 5, 3, 64], 
+                                           dtype=tf.float32),
+                                           initializer=tf.truncated_normal_initializer(stddev=0.05))
+            conv1 = tf.nn.conv2d(input_images, conv1_kernel, [1, 1, 1, 1], padding='SAME')
+            conv1_bias = zero_var(name='conv_bias1', shape=[64], dtype=tf.float32)
+            conv1_add_bias = tf.nn.bias_add(conv1, conv1_bias)
+            relu_conv1 = tf.nn.relu(conv1_add_bias)
+
+        pool1 = tf.nn.max_pool(relu_conv1, ksize=[1, 3, 3, 1], strides=[1, 2, 2, 1],padding='SAME', name='pool_layer1')
+        
+        with tf.variable_scope('conv1') as scope:
+            conv1_kernel = tf.get_variable(name='conv1_kernel', 
+                                           shape=[5, 5, 3, 64], 
+                                           dtype=tf.float32),
+                                           initializer=tf.truncated_normal_initializer(stddev=0.05))
+            conv1 = tf.nn.conv2d(input_images, conv1_kernel, [1, 1, 1, 1], padding='SAME')
+            conv1_bias = zero_var(name='conv_bias1', shape=[64], dtype=tf.float32)
+            conv1_add_bias = tf.nn.bias_add(conv1, conv1_bias)
+            relu_conv1 = tf.nn.relu(conv1_add_bias)        
         return logits
 
     def train(self, ims, labels):
