@@ -268,7 +268,7 @@ def train_wrapper(model):
             acc = tot_acc / tot_input
             print("Current Accuracy= " + "{:.3f}".format(acc))            
             if acc > best_accuracy:
-                model.save()
+                model.save(step)
                 best_accuracy = acc
 
     print("Optimization Finished!")    
