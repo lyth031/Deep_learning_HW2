@@ -80,7 +80,7 @@ class DataSet(object):
         '''Fetch the next batch of images and labels.'''
         if not self.has_next_batch():
             return None
-        print(self.cur_index)
+        # print(self.cur_index)
         x_batch = []
         y_batch = []
         for i in range(self.batch_size):
