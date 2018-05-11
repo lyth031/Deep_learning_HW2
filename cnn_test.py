@@ -22,9 +22,9 @@ display_iteration, valid_iteration and etc. '''
 
 # hyperparameters
 tf.app.flags.DEFINE_float('learning_rate', 0.001, 'learning rate')
-tf.app.flags.DEFINE_integer('max_iteration', 100, 'number of batch for training')
-tf.app.flags.DEFINE_string('display_iteration', 10, 'display the loss and accuracy on train set')
-tf.app.flags.DEFINE_string('valid_iteration', 10, 'display the loss and accuracy on validation set')
+tf.app.flags.DEFINE_integer('max_iteration', 1000, 'number of batch for training')
+tf.app.flags.DEFINE_integer('display_iteration', 100, 'display the loss and accuracy on train set')
+tf.app.flags.DEFINE_integer('valid_iteration', 100, 'display the loss and accuracy on validation set')
 
 
 class DataSet(object):
