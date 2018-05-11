@@ -1,6 +1,5 @@
 import os
-import cv2
-from PIL import Image
+import cv2.cv2 as cv2
 import numpy as np
 import tensorflow as tf
 
@@ -20,6 +19,12 @@ tf.app.flags.DEFINE_string('my_best_model', './checkpoints/model.ckpt-1000', 'fo
 
 '''TODO: you may add more configs such as base learning rate, max_iteration,
 display_iteration, valid_iteration and etc. '''
+
+# hyperparameters
+tf.app.flags.DEFINE_float('learning_rate', 0.001, 'learning rate')
+tf.app.flags.DEFINE_integer('max_iteration', 100, 'number of batch for training')
+tf.app.flags.DEFINE_string('display_iteration', 10, 'display the loss and accuracy on train set')
+tf.app.flags.DEFINE_string('valid_iteration', 10, 'display the loss and accuracy on validation set')
 
 
 class DataSet(object):
@@ -89,8 +94,10 @@ class DataSet(object):
         If no batch left, a training epoch is over.'''
         start = self.cur_index
         end = self.batch_size + start
-        if end > self._num_examples: return False
-        else: return True
+        if end > self._num_examples: 
+            return False
+        else: 
+            return True
 
     def init_epoch(self):
         '''Make sure you would shuffle the training set before the next epoch.
@@ -105,61 +112,121 @@ class Model(object):
     def __init__(self):
         '''TODO: construct your model here.'''
         # Placeholders for input ims and labels
-        ims = tf.placeholder(tf.float32, [None, 224, 224, 3])
-        labels = tf.placeholder(tf.float32, [None, FLAGS.n_label])
+        self.ims = tf.placeholder(tf.float32, [FLAGS.batch_size, 224, 224, 3])
+        self.labels = tf.placeholder(tf.float32, [FLAGS.batch_size, FLAGS.n_label])
+        self.labels_shape = tf.shape(self.labels)
+        self.keep_prob = tf.placeholder(tf.float32)
 
         # Construct model
-        self.logits = construct_model()
+        self.logits = self.construct_model()
         self.prediction = tf.nn.softmax(self.logits)
 
         # Define loss and optimizer
+        self.loss_op = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=self.logits, labels=self.labels))
+        self.optimizer = tf.train.AdamOptimizer(learning_rate=FLAGS.learning_rate)
+        self.train_op = self.optimizer.minimize(self.loss_op)
 
         # Evaluate model
-        correct_pred = tf.equal(tf.argmax(self.prediction, 1), tf.argmax(labels, 1))
-        accuracy = tf.reduce_mean(tf.cast(correct_pred, tf.float32))
+        self.correct_pred = tf.equal(tf.argmax(self.prediction, 1), tf.argmax(self.labels, 1))
+        self.accuracy = tf.reduce_mean(tf.cast(self.correct_pred, tf.float32))
 
         # init a tf session
         variables = tf.global_variables()
         self.saver = tf.train.Saver(variables)
         init = tf.global_variables_initializer()
-        configProt = tf.ConfigProto()
-        configProt.gpu_options.allow_growth = True
-        configProt.allow_soft_placement = True
-        self.sess = tf.Session(config=configProt)
+        self.sess = tf.Session()
         self.sess.run(init)
 
-    def contruct_model(self):
-        '''TODO: Your code here.'''
-        with tf.variable_scope('conv1') as scope:
-            conv1_kernel = tf.get_variable(name='conv1_kernel', 
-                                           shape=[5, 5, 3, 64], 
-                                           dtype=tf.float32),
-                                           initializer=tf.truncated_normal_initializer(stddev=0.05))
-            conv1 = tf.nn.conv2d(input_images, conv1_kernel, [1, 1, 1, 1], padding='SAME')
-            conv1_bias = zero_var(name='conv_bias1', shape=[64], dtype=tf.float32)
-            conv1_add_bias = tf.nn.bias_add(conv1, conv1_bias)
-            relu_conv1 = tf.nn.relu(conv1_add_bias)
+    def conv2d(self, x, W, b, strides=1):
+        x = tf.nn.conv2d(x, W, [1, strides, strides, 1], padding='SAME')
+        x = tf.nn.bias_add(x, b)
+        x = tf.nn.relu(x)
+        return x
 
-        pool1 = tf.nn.max_pool(relu_conv1, ksize=[1, 3, 3, 1], strides=[1, 2, 2, 1],padding='SAME', name='pool_layer1')
+    def maxpool2d(self, x, k=2):
+        return tf.nn.max_pool(x, ksize=[1, k, k, 1], strides=[1, k, k, 1],padding='SAME')
+
+    def construct_model(self):
+        '''TODO: Your code here.'''
+        with tf.variable_scope('conv1'):
+            self.conv1_kernel = tf.get_variable(name='kernels', 
+                                           shape=[3, 3, 3, 32], 
+                                           dtype=tf.float32,
+                                           initializer=tf.truncated_normal_initializer(stddev=0.05))          
+            self.conv1_bias = tf.get_variable(name='bias', 
+                                           shape=[32], 
+                                           dtype=tf.float32,
+                                           initializer=tf.constant_initializer(0.0))
+            conv1 = self.conv2d(self.ims, self.conv1_kernel, self.conv1_bias)
+
+
+        pool1 = self.maxpool2d(conv1)
         
-        with tf.variable_scope('conv1') as scope:
-            conv1_kernel = tf.get_variable(name='conv1_kernel', 
-                                           shape=[5, 5, 3, 64], 
-                                           dtype=tf.float32),
+        with tf.variable_scope('conv2'):
+            self.conv2_kernel = tf.get_variable(name='kernels', 
+                                           shape=[3, 3, 32, 64], 
+                                           dtype=tf.float32,
                                            initializer=tf.truncated_normal_initializer(stddev=0.05))
-            conv1 = tf.nn.conv2d(input_images, conv1_kernel, [1, 1, 1, 1], padding='SAME')
-            conv1_bias = zero_var(name='conv_bias1', shape=[64], dtype=tf.float32)
-            conv1_add_bias = tf.nn.bias_add(conv1, conv1_bias)
-            relu_conv1 = tf.nn.relu(conv1_add_bias)        
+            self.conv2_bias = tf.get_variable(name='bias', 
+                                           shape=[64], 
+                                           dtype=tf.float32,
+                                           initializer=tf.constant_initializer(0.0))
+            conv2 = self.conv2d(pool1, self.conv2_kernel, self.conv2_bias)
+
+        pool2 = self.maxpool2d(conv2)
+        
+        with tf.variable_scope('conv3'):
+            self.conv3_kernel = tf.get_variable(name='kernels', 
+                                           shape=[3, 3, 64, 128], 
+                                           dtype=tf.float32,
+                                           initializer=tf.truncated_normal_initializer(stddev=0.05))
+            self.conv3_bias = tf.get_variable(name='bias', 
+                                           shape=[128], 
+                                           dtype=tf.float32,
+                                           initializer=tf.constant_initializer(0.0))
+            conv3 = self.conv2d(pool2, self.conv3_kernel, self.conv3_bias)
+
+        pool3 = self.maxpool2d(conv3)
+
+        pool_reshape = pool3.get_shape().as_list()
+        nodes = pool_reshape[1]*pool_reshape[2]*pool_reshape[3]
+        reshaped_output = tf.reshape(pool3, [-1, nodes])
+        # reshaped_output = tf.contrib.layers.flatten(pool3)
+
+        with tf.variable_scope('full1'):
+            self.full_weight1 = tf.get_variable(name='weights', 
+                                           shape=[nodes, 1000], 
+                                           dtype=tf.float32,
+                                           initializer=tf.truncated_normal_initializer(stddev=0.05))
+            self.full_bias1 = tf.get_variable(name='bias', 
+                                           shape=[1000], 
+                                           dtype=tf.float32,
+                                           initializer=tf.constant_initializer(0.0))
+            full_layer1 = tf.nn.relu(tf.add(tf.matmul(reshaped_output, self.full_weight1), self.full_bias1))
+            full_layer1 = tf.nn.dropout(full_layer1, self.keep_prob)
+
+        with tf.variable_scope('full2'):
+            self.full_weight2 = tf.get_variable(name='weights', 
+                                           shape=[1000, 65], 
+                                           dtype=tf.float32,
+                                           initializer=tf.truncated_normal_initializer(stddev=0.05))
+            self.full_bias2 = tf.get_variable(name='bias', 
+                                           shape=[1000], 
+                                           dtype=tf.float32,
+                                           initializer=tf.constant_initializer(0.0))
+            logits = tf.add(tf.matmul(full_layer1, self.full_weight2), self.full_bias2)
+
         return logits
 
     def train(self, ims, labels):
         '''TODO: Your code here.'''
-        return self.loss
+        _, loss, acc = self.sess.run([self.train_op, self.loss_op, self.accuracy], feed_dict={self.ims: ims, self.labels: labels, self.keep_prob: 0.8})
+        return loss, acc
 
     def valid(self, ims, labels):
         '''TODO: Your code here.'''
-        return self.predictions
+        loss, acc = self.sess.run([self.loss_op, self.accuracy], feed_dict={self.ims: ims, self.labels: labels, self.keep_prob: 1.0})
+        return loss, acc
 
     def save(self, itr):
         checkpoint_path = os.path.join(FLAGS.save_dir, 'model.ckpt')
@@ -181,6 +248,30 @@ def train_wrapper(model):
                         data_aug=False, shuffle=False)
     '''create a tf session for training and validation
     TODO: to run your model, you may call model.train(), model.save(), model.valid()'''
+    best_accuracy = 0
+    for step in range(1, FLAGS.max_iteration+1):
+        if not train_set.has_next_batch():
+            train_set.init_epoch()     
+        batch_x, batch_y = train_set.next_batch()
+        if len(batch_x) == FLAGS.batch_size:
+            loss, acc = model.train(batch_x, batch_y)
+            print("Step " + str(step) + ", Minibatch Loss= " + \
+            "{:.4f}".format(loss) + ", Training Accuracy= " + "{:.3f}".format(acc))
+        if step % FLAGS.valid_iteration == 0:
+            tot_acc = 0.0
+            tot_input = 0
+            while valid_set.has_next_batch():
+                valid_ims, valid_labels = valid_set.next_batch()
+                loss, acc = model.valid(valid_ims, valid_labels)
+                tot_acc += acc*len(valid_ims)
+                tot_input += len(valid_ims)
+            acc = tot_acc / tot_input
+            print("Current Accuracy= " + "{:.3f}".format(acc))            
+            if acc > best_accuracy:
+                model.save()
+                best_accuracy = acc
+
+    print("Optimization Finished!")    
 
 
 def test_wrapper(model):
