@@ -47,6 +47,7 @@ def cnn_model(input_images,train_logical=True):
     pool3 = tf.nn.max_pool(relu_conv3, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1],padding='SAME', name='pool_layer3')
 
     pool_reshape = pool3.get_shape().as_list()
+    print(pool_reshape)
     nodes = pool_reshape[1]*pool_reshape[2]*pool_reshape[3]
     reshaped_output = tf.reshape(pool3, [pool_reshape[0], nodes])
 
