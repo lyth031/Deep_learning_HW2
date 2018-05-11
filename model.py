@@ -59,7 +59,7 @@ def cnn_model(input_images,train_logical=True):
                                     shape=[65], 
                                     dtype=tf.float32,
                                     initializer=tf.constant_initializer(0.0))
-        full_layer1 = tf.nn.relu(tf.add(tf.matmul(reshaped_output, full_weight1), full_bias1))
+        full_layer1 = tf.add(tf.matmul(reshaped_output, full_weight1), full_bias1)
 
     logits = full_layer1
 

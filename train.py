@@ -2,7 +2,7 @@ import tensorflow as tf
 from data import data_process
 from model import cnn_model
 # Training Parameters
-learning_rate = 0.001
+learning_rate = 0.005
 epochs = 10
 batch_size = 50
 display_step = 10
@@ -18,7 +18,7 @@ dset1_val_folder = '/data/DL_HW2/dset1/val'
 train_data = data_process(dset1_train_folder)
 val_data = data_process(dset1_val_folder)
 
-train_data = train_data.shuffle(buffer_size=100).batch(batch_size).repeat(epochs)
+train_data = train_data.shuffle(buffer_size=1000).batch(batch_size).repeat(epochs)
 # print(train_data.output_shapes)
 iterator = train_data.make_one_shot_iterator()
 next_batch = iterator.get_next()
@@ -48,6 +48,7 @@ with tf.Session() as sess:
         # print(sess.run(labels_one_hot, feed_dict = {labels : batch_y}))
         sess.run(train_op, feed_dict={images: batch_x, labels : batch_y})
         if step % display_step == 0 or step == 1:
+            print(batch_x, batch_y)
             loss, acc = sess.run([loss_op, accuracy], feed_dict={images: batch_x, labels: batch_y})
             print("Step " + str(step) + ", Minibatch Loss= " + \
             "{:.4f}".format(loss) + ", Training Accuracy= " + "{:.3f}".format(acc))

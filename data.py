@@ -27,7 +27,7 @@ def data_process(root_path):
         image_decoded = tf.image.decode_jpeg(image_string)
         image_resized = tf.image.resize_images(image_decoded, [224, 224])
         image_normed = image_resized/255
-        return image_resized, label
+        return image_normed, label
     
     dataset = dataset.map(_parse_function)
     return dataset
