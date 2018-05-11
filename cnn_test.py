@@ -243,7 +243,7 @@ def train_wrapper(model):
     train_set = DataSet(FLAGS.root_dir, FLAGS.dataset, 'train',
                         FLAGS.batch_size, FLAGS.n_label,
                         data_aug=False, shuffle=True)
-    valid_set = DataSet(FLAGS.root_dir, FLAGS.dataset, 'valid',
+    valid_set = DataSet(FLAGS.root_dir, FLAGS.dataset, 'val',
                         FLAGS.batch_size, FLAGS.n_label,
                         data_aug=False, shuffle=False)
     '''create a tf session for training and validation
