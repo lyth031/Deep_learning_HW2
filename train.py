@@ -26,7 +26,7 @@ labels = tf.placeholder(tf.float32, [None, num_classes])
 # keep_prob = tf.placeholder(tf.float32)
 
 # Construct model
-logits = cnn_model(images, batch_size, num_classes)
+logits = cnn_model(images)
 
 # Define loss and optimizer
 loss_op = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=logits, labels=labels))
