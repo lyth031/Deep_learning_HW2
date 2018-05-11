@@ -211,7 +211,7 @@ class Model(object):
                                            dtype=tf.float32,
                                            initializer=tf.truncated_normal_initializer(stddev=0.05))
             self.full_bias2 = tf.get_variable(name='bias', 
-                                           shape=[1000], 
+                                           shape=[65], 
                                            dtype=tf.float32,
                                            initializer=tf.constant_initializer(0.0))
             logits = tf.add(tf.matmul(full_layer1, self.full_weight2), self.full_bias2)
