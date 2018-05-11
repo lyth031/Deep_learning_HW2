@@ -6,7 +6,7 @@ learning_rate = 0.001
 epochs = 10
 batch_size = 50
 display_step = 10
-num_steps = 1000
+num_steps = 100
 # Network Parameters
 num_classes = 65 # total classes
 # dropout = 0.5 # Dropout, probability to keep units
@@ -18,22 +18,25 @@ dset1_val_folder = '/data/DL_HW2/dset1/val'
 train_data = data_process(dset1_train_folder)
 val_data = data_process(dset1_val_folder)
 
-train_data = train_data.shuffle(buffer_size=1000).batch(batch_size).repeat(epochs)
+train_data = train_data.shuffle(buffer_size=100).batch(batch_size).repeat(epochs)
+# print(train_data.output_shapes)
 iterator = train_data.make_one_shot_iterator()
+next_batch = iterator.get_next()
 
 images = tf.placeholder(tf.float32, [None, 224, 224, 3]) # data input (img shape: 224*224*3)
-labels = tf.placeholder(tf.float32, [None, num_classes])
+labels = tf.placeholder(tf.int64, [None])
+labels_one_hot = tf.one_hot(labels, depth=65)
 # keep_prob = tf.placeholder(tf.float32)
 
 # Construct model
 logits = cnn_model(images)
 
 # Define loss and optimizer
-loss_op = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=logits, labels=labels))
+loss_op = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=logits, labels=labels_one_hot))
 optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate)
 train_op = optimizer.minimize(loss_op)
 # Evaluate model
-correct_pred = tf.equal(tf.argmax(logits, 1), tf.argmax(labels, 1))
+correct_pred = tf.equal(tf.argmax(logits, 1), tf.argmax(labels_one_hot, 1))
 accuracy = tf.reduce_mean(tf.cast(correct_pred, tf.float32))
 # Initialize the variables (i.e. assign their default value)
 init = tf.global_variables_initializer()
@@ -41,8 +44,9 @@ with tf.Session() as sess:
     # Run the initializer
     sess.run(init)
     for step in range(1, num_steps+1):       
-        batch_x, batch_y = iterator.get_next()
-        sess.run(train_op, feed_dict={images: batch_x, labels: batch_y})
+        batch_x, batch_y = sess.run(next_batch)
+        # print(sess.run(labels_one_hot, feed_dict = {labels : batch_y}))
+        sess.run(train_op, feed_dict={images: batch_x, labels : batch_y})
         if step % display_step == 0 or step == 1:
             loss, acc = sess.run([loss_op, accuracy], feed_dict={images: batch_x, labels: batch_y})
             print("Step " + str(step) + ", Minibatch Loss= " + \
