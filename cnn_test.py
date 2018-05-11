@@ -266,6 +266,7 @@ def train_wrapper(model):
                 tot_acc += acc*len(valid_ims)
                 tot_input += len(valid_ims)
             acc = tot_acc / tot_input
+            valid_set.init_epoch()
             print("Current Accuracy= " + "{:.3f}".format(acc))            
             if acc > best_accuracy:
                 model.save(step)
