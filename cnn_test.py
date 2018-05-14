@@ -224,7 +224,7 @@ class Model(object):
 
     def train(self, ims, labels):
         '''TODO: Your code here.'''
-        _, loss, acc = self.sess.run([self.train_op, self.loss_op, self.accuracy], feed_dict={self.ims: ims, self.labels: labels, self.keep_prob: 0.7})
+        _, loss, acc = self.sess.run([self.train_op, self.loss_op, self.accuracy], feed_dict={self.ims: ims, self.labels: labels, self.keep_prob: 0.5})
         return loss, acc
 
     def valid(self, ims, labels):
@@ -241,10 +241,11 @@ class Model(object):
         print('saved to ' + FLAGS.save_dir)
 
     def load(self):
-        print('load model:', FLAGS.my_best_model)
-        if FLAGS.dataset == 'dset1': 
+        if FLAGS.dataset == 'dset1':
+            print('load model:', FLAGS.my_best_model_dset1)
             self.saver.restore(self.sess, FLAGS.my_best_model_dset1)
         else:
+            print('load model:', FLAGS.my_best_model_dset2)
             self.saver.restore(self.sess, FLAGS.my_best_model_dset2)
 
 
