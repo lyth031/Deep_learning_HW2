@@ -9,7 +9,7 @@ FLAGS = tf.app.flags.FLAGS
 tf.app.flags.DEFINE_boolean('is_training', True, 'training or testing')
 # data
 tf.app.flags.DEFINE_string('root_dir', '/data/DL_HW2', 'data root dir')
-tf.app.flags.DEFINE_string('dataset', 'dset1', 'dset1 or dset2')
+tf.app.flags.DEFINE_string('dataset', 'dset2', 'dset1 or dset2')
 tf.app.flags.DEFINE_integer('n_label', 65, 'number of classes')
 # trainig
 tf.app.flags.DEFINE_integer('batch_size', 64, 'mini batch for a training iter')
@@ -22,7 +22,7 @@ display_iteration, valid_iteration and etc. '''
 
 # hyperparameters
 tf.app.flags.DEFINE_float('learning_rate', 0.001, 'learning rate')
-tf.app.flags.DEFINE_integer('max_iteration', 2000, 'number of batch for training')
+tf.app.flags.DEFINE_integer('max_iteration', 5000, 'number of batch for training')
 tf.app.flags.DEFINE_integer('display_iteration', 100, 'display the loss and accuracy on train set')
 tf.app.flags.DEFINE_integer('valid_iteration', 100, 'display the loss and accuracy on validation set')
 
@@ -223,7 +223,7 @@ class Model(object):
 
     def train(self, ims, labels):
         '''TODO: Your code here.'''
-        _, loss, acc = self.sess.run([self.train_op, self.loss_op, self.accuracy], feed_dict={self.ims: ims, self.labels: labels, self.keep_prob: 0.5})
+        _, loss, acc = self.sess.run([self.train_op, self.loss_op, self.accuracy], feed_dict={self.ims: ims, self.labels: labels, self.keep_prob: 0.7})
         return loss, acc
 
     def valid(self, ims, labels):
