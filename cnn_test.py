@@ -216,7 +216,7 @@ class Model(object):
         # 7*7*32
         pool_reshape = pool5.get_shape().as_list()
         nodes = pool_reshape[1]*pool_reshape[2]*pool_reshape[3]
-        reshaped_output = tf.reshape(pool4, [-1, nodes])
+        reshaped_output = tf.reshape(pool5, [-1, nodes])
         # reshaped_output = tf.contrib.layers.flatten(pool5)
 
         with tf.variable_scope('full1'):
