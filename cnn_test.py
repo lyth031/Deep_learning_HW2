@@ -22,7 +22,7 @@ display_iteration, valid_iteration and etc. '''
 
 # hyperparameters
 tf.app.flags.DEFINE_float('learning_rate', 0.001, 'learning rate')
-tf.app.flags.DEFINE_integer('max_iteration', 1000, 'number of batch for training')
+tf.app.flags.DEFINE_integer('max_iteration', 10000, 'number of batch for training')
 tf.app.flags.DEFINE_integer('display_iteration', 100, 'display the loss and accuracy on train set')
 tf.app.flags.DEFINE_integer('valid_iteration', 100, 'display the loss and accuracy on validation set')
 
@@ -190,30 +190,30 @@ class Model(object):
         # 28*28*64
         with tf.variable_scope('conv4'):
             self.conv4_kernel = tf.get_variable(name='kernels', 
-                                           shape=[3, 3, 64, 64], 
+                                           shape=[3, 3, 64, 128], 
                                            dtype=tf.float32,
                                            initializer=tf.truncated_normal_initializer(stddev=0.05))
             self.conv4_bias = tf.get_variable(name='bias', 
-                                           shape=[64], 
+                                           shape=[128], 
                                            dtype=tf.float32,
                                            initializer=tf.constant_initializer(0.0))
             conv4 = self.conv2d(pool3, self.conv4_kernel, self.conv4_bias)
-        # 28*28*64
+        # 28*28*128
         pool4 = self.maxpool2d(conv4)
-        # 14*14*64
+        # 14*14*128
         with tf.variable_scope('conv5'):
             self.conv5_kernel = tf.get_variable(name='kernels', 
-                                           shape=[3, 3, 64, 32], 
+                                           shape=[3, 3, 128, 64], 
                                            dtype=tf.float32,
                                            initializer=tf.truncated_normal_initializer(stddev=0.05))
             self.conv5_bias = tf.get_variable(name='bias', 
-                                           shape=[32], 
+                                           shape=[64], 
                                            dtype=tf.float32,
                                            initializer=tf.constant_initializer(0.0))
             conv5 = self.conv2d(pool4, self.conv5_kernel, self.conv5_bias)
-        # 14*14*32
+        # 14*14*64
         pool5 = self.maxpool2d(conv5)
-        # 7*7*32
+        # 7*7*64
         pool_reshape = pool5.get_shape().as_list()
         nodes = pool_reshape[1]*pool_reshape[2]*pool_reshape[3]
         reshaped_output = tf.reshape(pool5, [-1, nodes])
@@ -281,7 +281,8 @@ def train_wrapper(model):
         batch_x, batch_y = train_set.next_batch()
         if len(batch_x) == FLAGS.batch_size:
             loss, acc = model.train(batch_x, batch_y)
-            print("Step " + str(step) + ", Minibatch Loss= " + \
+            if step % 10 == 0:
+                print("Step " + str(step) + ", Minibatch Loss= " + \
             "{:.4f}".format(loss) + ", Training Accuracy= " + "{:.3f}".format(acc))
         if step % FLAGS.valid_iteration == 0:
             tot_acc = 0.0
@@ -322,6 +323,7 @@ def test_wrapper(model):
 
 def main(argv=None):
     print('Initializing models')
+    print('is_training:' + str(FLAGS.is_training))
     model = Model()
     if FLAGS.is_training:
         train_wrapper(model)
