@@ -148,58 +148,84 @@ class Model(object):
 
     def construct_model(self):
         '''TODO: Your code here.'''
+        # 224*224*3
         with tf.variable_scope('conv1'):
             self.conv1_kernel = tf.get_variable(name='kernels', 
-                                           shape=[3, 3, 3, 32], 
+                                           shape=[3, 3, 3, 16], 
                                            dtype=tf.float32,
                                            initializer=tf.truncated_normal_initializer(stddev=0.05))          
             self.conv1_bias = tf.get_variable(name='bias', 
-                                           shape=[32], 
+                                           shape=[16], 
                                            dtype=tf.float32,
                                            initializer=tf.constant_initializer(0.0))
             conv1 = self.conv2d(self.ims, self.conv1_kernel, self.conv1_bias)
-
-
+        # 224*224*16
         pool1 = self.maxpool2d(conv1)
-        
+        # 112*112*16
         with tf.variable_scope('conv2'):
             self.conv2_kernel = tf.get_variable(name='kernels', 
-                                           shape=[3, 3, 32, 64], 
+                                           shape=[3, 3, 16, 32], 
                                            dtype=tf.float32,
                                            initializer=tf.truncated_normal_initializer(stddev=0.05))
             self.conv2_bias = tf.get_variable(name='bias', 
-                                           shape=[64], 
+                                           shape=[32], 
                                            dtype=tf.float32,
                                            initializer=tf.constant_initializer(0.0))
             conv2 = self.conv2d(pool1, self.conv2_kernel, self.conv2_bias)
-
+        # 112*112*32
         pool2 = self.maxpool2d(conv2)
-        
+        # 56*56*32        
         with tf.variable_scope('conv3'):
             self.conv3_kernel = tf.get_variable(name='kernels', 
-                                           shape=[3, 3, 64, 128], 
+                                           shape=[3, 3, 32, 64], 
                                            dtype=tf.float32,
                                            initializer=tf.truncated_normal_initializer(stddev=0.05))
             self.conv3_bias = tf.get_variable(name='bias', 
-                                           shape=[128], 
+                                           shape=[64], 
                                            dtype=tf.float32,
                                            initializer=tf.constant_initializer(0.0))
             conv3 = self.conv2d(pool2, self.conv3_kernel, self.conv3_bias)
-
+        # 56*56*64  
         pool3 = self.maxpool2d(conv3)
-
-        pool_reshape = pool3.get_shape().as_list()
+        # 28*28*64
+        with tf.variable_scope('conv4'):
+            self.conv4_kernel = tf.get_variable(name='kernels', 
+                                           shape=[3, 3, 64, 64], 
+                                           dtype=tf.float32,
+                                           initializer=tf.truncated_normal_initializer(stddev=0.05))
+            self.conv4_bias = tf.get_variable(name='bias', 
+                                           shape=[64], 
+                                           dtype=tf.float32,
+                                           initializer=tf.constant_initializer(0.0))
+            conv4 = self.conv2d(pool3, self.conv4_kernel, self.conv4_bias)
+        # 28*28*64
+        pool4 = self.maxpool2d(conv4)
+        # 14*14*64
+        with tf.variable_scope('conv5'):
+            self.conv5_kernel = tf.get_variable(name='kernels', 
+                                           shape=[3, 3, 64, 32], 
+                                           dtype=tf.float32,
+                                           initializer=tf.truncated_normal_initializer(stddev=0.05))
+            self.conv5_bias = tf.get_variable(name='bias', 
+                                           shape=[32], 
+                                           dtype=tf.float32,
+                                           initializer=tf.constant_initializer(0.0))
+            conv5 = self.conv2d(pool4, self.conv5_kernel, self.conv5_bias)
+        # 14*14*32
+        pool5 = self.maxpool2d(conv5)
+        # 7*7*32
+        pool_reshape = pool5.get_shape().as_list()
         nodes = pool_reshape[1]*pool_reshape[2]*pool_reshape[3]
-        reshaped_output = tf.reshape(pool3, [-1, nodes])
-        # reshaped_output = tf.contrib.layers.flatten(pool3)
+        reshaped_output = tf.reshape(pool4, [-1, nodes])
+        # reshaped_output = tf.contrib.layers.flatten(pool5)
 
         with tf.variable_scope('full1'):
             self.full_weight1 = tf.get_variable(name='weights', 
-                                           shape=[nodes, 1000], 
+                                           shape=[nodes, 300], 
                                            dtype=tf.float32,
                                            initializer=tf.truncated_normal_initializer(stddev=0.05))
             self.full_bias1 = tf.get_variable(name='bias', 
-                                           shape=[1000], 
+                                           shape=[300], 
                                            dtype=tf.float32,
                                            initializer=tf.constant_initializer(0.0))
             full_layer1 = tf.nn.relu(tf.add(tf.matmul(reshaped_output, self.full_weight1), self.full_bias1))
@@ -207,7 +233,7 @@ class Model(object):
 
         with tf.variable_scope('full2'):
             self.full_weight2 = tf.get_variable(name='weights', 
-                                           shape=[1000, 65], 
+                                           shape=[300, 65], 
                                            dtype=tf.float32,
                                            initializer=tf.truncated_normal_initializer(stddev=0.05))
             self.full_bias2 = tf.get_variable(name='bias', 
@@ -220,7 +246,7 @@ class Model(object):
 
     def train(self, ims, labels):
         '''TODO: Your code here.'''
-        _, loss, acc = self.sess.run([self.train_op, self.loss_op, self.accuracy], feed_dict={self.ims: ims, self.labels: labels, self.keep_prob: 0.8})
+        _, loss, acc = self.sess.run([self.train_op, self.loss_op, self.accuracy], feed_dict={self.ims: ims, self.labels: labels, self.keep_prob: 0.5})
         return loss, acc
 
     def valid(self, ims, labels):
@@ -277,10 +303,21 @@ def train_wrapper(model):
 
 def test_wrapper(model):
     '''Finish this function so that TA could test your code easily.'''    
-    test_set = DataSet(FLAGS.root_dir, FLAGS.dataset, 'test',
+    test_set = DataSet(FLAGS.root_dir, FLAGS.dataset, 'val',
                        FLAGS.batch_size, FLAGS.n_label,
                        data_aug=False, shuffle=False)
     '''TODO: Your code here.'''
+    model.load()
+    tot_acc = 0.0
+    tot_input = 0
+    while test_set.has_next_batch():
+        test_ims, test_labels = test_set.next_batch()
+        _, acc = model.valid(test_ims, test_labels)
+        tot_acc += acc*len(test_ims)
+        tot_input += len(test_ims)
+    acc = tot_acc / tot_input
+    print("Test Accuracy= " + "{:.3f}".format(acc))
+    print("Test Finished!")
 
 
 def main(argv=None):
