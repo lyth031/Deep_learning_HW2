@@ -9,20 +9,21 @@ FLAGS = tf.app.flags.FLAGS
 tf.app.flags.DEFINE_boolean('is_training', True, 'training or testing')
 # data
 tf.app.flags.DEFINE_string('root_dir', '/data/DL_HW2', 'data root dir')
-tf.app.flags.DEFINE_string('dataset', 'dset2', 'dset1 or dset2')
+tf.app.flags.DEFINE_string('dataset', 'dset1', 'dset1 or dset2')
 tf.app.flags.DEFINE_integer('n_label', 65, 'number of classes')
 # trainig
 tf.app.flags.DEFINE_integer('batch_size', 64, 'mini batch for a training iter')
 tf.app.flags.DEFINE_string('save_dir', './checkpoints', 'dir to the trained model')
 # test
-tf.app.flags.DEFINE_string('my_best_model', './checkpoints/model.ckpt-1000', 'for test')
+tf.app.flags.DEFINE_string('my_best_model_dset1', './checkpoints/model_dset1.ckpt-3000', 'for test')
+tf.app.flags.DEFINE_string('my_best_model_dset2', './checkpoints/model_dset2.ckpt-3000', 'for test')
 
 '''TODO: you may add more configs such as base learning rate, max_iteration,
 display_iteration, valid_iteration and etc. '''
 
 # hyperparameters
 tf.app.flags.DEFINE_float('learning_rate', 0.001, 'learning rate')
-tf.app.flags.DEFINE_integer('max_iteration', 5000, 'number of batch for training')
+tf.app.flags.DEFINE_integer('max_iteration', 3000, 'number of batch for training')
 tf.app.flags.DEFINE_integer('display_iteration', 100, 'display the loss and accuracy on train set')
 tf.app.flags.DEFINE_integer('valid_iteration', 100, 'display the loss and accuracy on validation set')
 
@@ -232,13 +233,19 @@ class Model(object):
         return loss, acc
 
     def save(self, itr):
-        checkpoint_path = os.path.join(FLAGS.save_dir, 'model.ckpt')
+        if FLAGS.dataset == 'dset1': 
+            checkpoint_path = os.path.join(FLAGS.save_dir, 'model_dset1.ckpt')
+        else: 
+            checkpoint_path = os.path.join(FLAGS.save_dir, 'model_dset2.ckpt')
         self.saver.save(self.sess, checkpoint_path, global_step=itr)
         print('saved to ' + FLAGS.save_dir)
 
     def load(self):
         print('load model:', FLAGS.my_best_model)
-        self.saver.restore(self.sess, FLAGS.my_best_model)
+        if FLAGS.dataset == 'dset1': 
+            self.saver.restore(self.sess, FLAGS.my_best_model_dset1)
+        else:
+            self.saver.restore(self.sess, FLAGS.my_best_model_dset2)
 
 
 def train_wrapper(model):
