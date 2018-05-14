@@ -224,7 +224,7 @@ class Model(object):
 
     def train(self, ims, labels):
         '''TODO: Your code here.'''
-        _, loss, acc = self.sess.run([self.train_op, self.loss_op, self.accuracy], feed_dict={self.ims: ims, self.labels: labels, self.keep_prob: 0.5})
+        _, loss, acc = self.sess.run([self.train_op, self.loss_op, self.accuracy], feed_dict={self.ims: ims, self.labels: labels, self.keep_prob: 0.7})
         return loss, acc
 
     def valid(self, ims, labels):
@@ -260,16 +260,19 @@ def train_wrapper(model):
     '''create a tf session for training and validation
     TODO: to run your model, you may call model.train(), model.save(), model.valid()'''
     best_accuracy = 0
+    acc_train = []
+    acc_valid = []
     for step in range(1, FLAGS.max_iteration+1):
         if not train_set.has_next_batch():
             train_set.init_epoch()     
         batch_x, batch_y = train_set.next_batch()
         if len(batch_x) == FLAGS.batch_size:
             loss, acc = model.train(batch_x, batch_y)
-            if step % 10 == 0:
+            if step == 1 or step % 10 == 0:
                 print("Step " + str(step) + ", Minibatch Loss= " + \
                 "{:.4f}".format(loss) + ", Training Accuracy= " + "{:.3f}".format(acc))
         if step % FLAGS.valid_iteration == 0:
+            acc_train.append(acc)
             tot_acc = 0.0
             tot_input = 0
             while valid_set.has_next_batch():
@@ -279,12 +282,15 @@ def train_wrapper(model):
                 tot_input += len(valid_ims)
             acc = tot_acc / tot_input
             valid_set.init_epoch()
-            print("Current Accuracy= " + "{:.3f}".format(acc))            
+            print("Current Accuracy= " + "{:.3f}".format(acc))
+            acc_valid.append(acc)          
             if acc > best_accuracy:
                 model.save(step)
                 best_accuracy = acc
 
-    print("Optimization Finished!")    
+    print("Optimization Finished!")
+    print(acc_train)
+    print(acc_valid)
 
 
 def test_wrapper(model):
