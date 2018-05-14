@@ -22,7 +22,7 @@ display_iteration, valid_iteration and etc. '''
 
 # hyperparameters
 tf.app.flags.DEFINE_float('learning_rate', 0.001, 'learning rate')
-tf.app.flags.DEFINE_integer('max_iteration', 10000, 'number of batch for training')
+tf.app.flags.DEFINE_integer('max_iteration', 2000, 'number of batch for training')
 tf.app.flags.DEFINE_integer('display_iteration', 100, 'display the loss and accuracy on train set')
 tf.app.flags.DEFINE_integer('valid_iteration', 100, 'display the loss and accuracy on validation set')
 
@@ -151,17 +151,17 @@ class Model(object):
         # 224*224*3
         with tf.variable_scope('conv1'):
             self.conv1_kernel = tf.get_variable(name='kernels', 
-                                           shape=[3, 3, 3, 16], 
+                                           shape=[5, 5, 3, 16], 
                                            dtype=tf.float32,
                                            initializer=tf.truncated_normal_initializer(stddev=0.05))          
             self.conv1_bias = tf.get_variable(name='bias', 
                                            shape=[16], 
                                            dtype=tf.float32,
                                            initializer=tf.constant_initializer(0.0))
-            conv1 = self.conv2d(self.ims, self.conv1_kernel, self.conv1_bias)
-        # 224*224*16
-        pool1 = self.maxpool2d(conv1)
+            conv1 = self.conv2d(self.ims, self.conv1_kernel, self.conv1_bias, strides=2)
         # 112*112*16
+        pool1 = self.maxpool2d(conv1)
+        # 56*56*16
         with tf.variable_scope('conv2'):
             self.conv2_kernel = tf.get_variable(name='kernels', 
                                            shape=[3, 3, 16, 32], 
@@ -172,9 +172,9 @@ class Model(object):
                                            dtype=tf.float32,
                                            initializer=tf.constant_initializer(0.0))
             conv2 = self.conv2d(pool1, self.conv2_kernel, self.conv2_bias)
-        # 112*112*32
+        # 56*56*32
         pool2 = self.maxpool2d(conv2)
-        # 56*56*32        
+        # 28*28*32        
         with tf.variable_scope('conv3'):
             self.conv3_kernel = tf.get_variable(name='kernels', 
                                            shape=[3, 3, 32, 64], 
@@ -185,62 +185,39 @@ class Model(object):
                                            dtype=tf.float32,
                                            initializer=tf.constant_initializer(0.0))
             conv3 = self.conv2d(pool2, self.conv3_kernel, self.conv3_bias)
-        # 56*56*64  
+        # 28*28*64  
         pool3 = self.maxpool2d(conv3)
-        # 28*28*64
+        # 14*14*64
         with tf.variable_scope('conv4'):
             self.conv4_kernel = tf.get_variable(name='kernels', 
-                                           shape=[3, 3, 64, 128], 
+                                           shape=[3, 3, 64, 64], 
                                            dtype=tf.float32,
                                            initializer=tf.truncated_normal_initializer(stddev=0.05))
             self.conv4_bias = tf.get_variable(name='bias', 
-                                           shape=[128], 
-                                           dtype=tf.float32,
-                                           initializer=tf.constant_initializer(0.0))
-            conv4 = self.conv2d(pool3, self.conv4_kernel, self.conv4_bias)
-        # 28*28*128
-        pool4 = self.maxpool2d(conv4)
-        # 14*14*128
-        with tf.variable_scope('conv5'):
-            self.conv5_kernel = tf.get_variable(name='kernels', 
-                                           shape=[3, 3, 128, 64], 
-                                           dtype=tf.float32,
-                                           initializer=tf.truncated_normal_initializer(stddev=0.05))
-            self.conv5_bias = tf.get_variable(name='bias', 
                                            shape=[64], 
                                            dtype=tf.float32,
                                            initializer=tf.constant_initializer(0.0))
-            conv5 = self.conv2d(pool4, self.conv5_kernel, self.conv5_bias)
+            conv4 = self.conv2d(pool3, self.conv4_kernel, self.conv4_bias)
         # 14*14*64
-        pool5 = self.maxpool2d(conv5)
-        # 7*7*64
-        pool_reshape = pool5.get_shape().as_list()
+        pool4 = self.maxpool2d(conv4, k=7)
+        # 2*2*64
+        pool_reshape = pool4.get_shape().as_list()
         nodes = pool_reshape[1]*pool_reshape[2]*pool_reshape[3]
-        reshaped_output = tf.reshape(pool5, [-1, nodes])
+        reshaped_output = tf.reshape(pool4, [-1, nodes])
         # reshaped_output = tf.contrib.layers.flatten(pool5)
+        # dropout
+        reshaped_output = tf.nn.dropout(reshaped_output, self.keep_prob)
 
         with tf.variable_scope('full1'):
             self.full_weight1 = tf.get_variable(name='weights', 
-                                           shape=[nodes, 300], 
+                                           shape=[nodes, 65], 
                                            dtype=tf.float32,
                                            initializer=tf.truncated_normal_initializer(stddev=0.05))
             self.full_bias1 = tf.get_variable(name='bias', 
-                                           shape=[300], 
-                                           dtype=tf.float32,
-                                           initializer=tf.constant_initializer(0.0))
-            full_layer1 = tf.nn.relu(tf.add(tf.matmul(reshaped_output, self.full_weight1), self.full_bias1))
-            full_layer1 = tf.nn.dropout(full_layer1, self.keep_prob)
-
-        with tf.variable_scope('full2'):
-            self.full_weight2 = tf.get_variable(name='weights', 
-                                           shape=[300, 65], 
-                                           dtype=tf.float32,
-                                           initializer=tf.truncated_normal_initializer(stddev=0.05))
-            self.full_bias2 = tf.get_variable(name='bias', 
                                            shape=[65], 
                                            dtype=tf.float32,
                                            initializer=tf.constant_initializer(0.0))
-            logits = tf.add(tf.matmul(full_layer1, self.full_weight2), self.full_bias2)
+            logits = tf.add(tf.matmul(reshaped_output, self.full_weight1), self.full_bias1)
 
         return logits
 
@@ -283,7 +260,7 @@ def train_wrapper(model):
             loss, acc = model.train(batch_x, batch_y)
             if step % 10 == 0:
                 print("Step " + str(step) + ", Minibatch Loss= " + \
-            "{:.4f}".format(loss) + ", Training Accuracy= " + "{:.3f}".format(acc))
+                "{:.4f}".format(loss) + ", Training Accuracy= " + "{:.3f}".format(acc))
         if step % FLAGS.valid_iteration == 0:
             tot_acc = 0.0
             tot_input = 0
@@ -323,7 +300,6 @@ def test_wrapper(model):
 
 def main(argv=None):
     print('Initializing models')
-    print('is_training:' + str(FLAGS.is_training))
     model = Model()
     if FLAGS.is_training:
         train_wrapper(model)
