@@ -1,0 +1,6 @@
+model_checkpoint_path: "model_dset2.ckpt-2600"
+all_model_checkpoint_paths: "model_dset2.ckpt-1800"
+all_model_checkpoint_paths: "model_dset2.ckpt-1900"
+all_model_checkpoint_paths: "model_dset2.ckpt-2000"
+all_model_checkpoint_paths: "model_dset2.ckpt-2200"
+all_model_checkpoint_paths: "model_dset2.ckpt-2600"

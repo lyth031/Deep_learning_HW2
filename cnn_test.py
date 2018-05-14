@@ -16,7 +16,7 @@ tf.app.flags.DEFINE_integer('batch_size', 64, 'mini batch for a training iter')
 tf.app.flags.DEFINE_string('save_dir', './checkpoints', 'dir to the trained model')
 # test
 tf.app.flags.DEFINE_string('my_best_model_dset1', './checkpoints/model_dset1.ckpt-3000', 'for test')
-tf.app.flags.DEFINE_string('my_best_model_dset2', './checkpoints/model_dset2.ckpt-3000', 'for test')
+tf.app.flags.DEFINE_string('my_best_model_dset2', './checkpoints/model_dset2.ckpt-2600', 'for test')
 
 '''TODO: you may add more configs such as base learning rate, max_iteration,
 display_iteration, valid_iteration and etc. '''
@@ -224,7 +224,7 @@ class Model(object):
 
     def train(self, ims, labels):
         '''TODO: Your code here.'''
-        _, loss, acc = self.sess.run([self.train_op, self.loss_op, self.accuracy], feed_dict={self.ims: ims, self.labels: labels, self.keep_prob: 0.7})
+        _, loss, acc = self.sess.run([self.train_op, self.loss_op, self.accuracy], feed_dict={self.ims: ims, self.labels: labels, self.keep_prob: 0.3})
         return loss, acc
 
     def valid(self, ims, labels):
@@ -295,7 +295,7 @@ def train_wrapper(model):
 
 def test_wrapper(model):
     '''Finish this function so that TA could test your code easily.'''    
-    test_set = DataSet(FLAGS.root_dir, FLAGS.dataset, 'val',
+    test_set = DataSet(FLAGS.root_dir, FLAGS.dataset, 'test',
                        FLAGS.batch_size, FLAGS.n_label,
                        data_aug=False, shuffle=False)
     '''TODO: Your code here.'''
